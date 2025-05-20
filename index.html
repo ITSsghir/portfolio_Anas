@@ -2,17 +2,247 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mon site test GitHub Pages</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Itssghir - Data Scientist</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #4b0082, #8a2be2);
+      font-family: 'Orbitron', sans-serif;
+      color: #fff;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    header {
+      text-align: center;
+      padding: 60px 20px 30px;
+    }
+
+    header h1 {
+      font-size: 3em;
+      margin: 0;
+    }
+
+    header p {
+      font-size: 1.2em;
+      opacity: 0.8;
+    }
+
+    section {
+      max-width: 900px;
+      margin: auto;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .q-learning-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      grid-template-rows: repeat(5, 60px);
+      gap: 4px;
+      margin: 30px auto;
+      justify-content: center;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: #6a0dad;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #fff;
+    }
+
+    .agent {
+      background: #00ffcc;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+    }
+
+    .goal {
+      background: gold;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+    }
+
+    button {
+      background: #9b59b6;
+      border: none;
+      padding: 12px 24px;
+      color: white;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background: #be75e6;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 1.1em;
+      font-style: italic;
+      color: #ffd700;
+    }
+
+    textarea {
+      width: 80%;
+      height: 80px;
+      padding: 10px;
+      margin: 20px 0;
+      border-radius: 5px;
+      border: none;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    #sql-output {
+      background-color: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: left;
+      margin-top: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+
+    footer {
+      background-color: #2c003e;
+      color: #fff;
+      text-align: center;
+      padding: 20px 10px;
+      margin-top: 50px;
+    }
+
+    #snake-follow {
+      position: fixed;
+      pointer-events: none;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+    }
+
+    .snake-dot {
+      width: 12px;
+      height: 12px;
+      background: #00ffcc;
+      border-radius: 50%;
+      position: absolute;
+      box-shadow: 0 0 5px #00ffcc;
+    }
+
+    #table-list {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #ffffff33;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      color: #adf;
+    }
+
+    #storm-effect {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 4px);
+      animation: storm 0.5s linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes storm {
+      from { background-position: 0 0; }
+      to { background-position: 100% 100%; }
+    }
+  </style>
 </head>
 <body>
-  <h1>Bienvenue sur mon site test !</h1>
-  <p>Ceci est un exemple simple avec HTML, CSS et JavaScript.</p>
-  
-  <button id="monBouton">Clique-moi !</button>
-  <p id="message"></p>
+  <div id="storm-effect"></div>
+  <div id="snake-follow"></div>
 
-  <script src="script.js"></script>
+  <header>
+    <h1>Itssghir</h1>
+    <p>Data Scientist • Python Enthusiast • Q-Learning Explorer</p>
+  </header>
+
+  <section>
+    <h2>📊 Console SQL Interactive</h2>
+    <div id="table-list">Chargement des tables...</div>
+    <textarea id="sql-input" placeholder="Ex: SELECT * FROM Competences;"></textarea><br>
+    <button onclick="runSQL()">Exécuter</button>
+    <div id="sql-output"></div>
+  </section>
+
+  <section>
+    <h2>Jeu Q-Learning</h2>
+    <p>Un agent doit apprendre à atteindre l'objectif (case dorée) sur une grille 5x5.</p>
+    <div class="q-learning-grid" id="grid"></div>
+    <button onclick="startQLearning()">Démarrer l'apprentissage</button>
+    <div id="status"></div>
+  </section>
+
+  <footer>
+    <p>📧 Contact : itssghir@example.com | 💼 LinkedIn : <a href="https://www.linkedin.com/in/itssghir" style="color: #fff; text-decoration: underline;">linkedin.com/in/itssghir</a></p>
+    <p>&copy; 2025 Itssghir - Tous droits réservés</p>
+  </footer>
+
+  <script>
+    let db;
+    const tableList = document.getElementById("table-list");
+
+    initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` })
+      .then(SQL => {
+        db = new SQL.Database();
+        db.run(`CREATE TABLE Utilisateur (id INTEGER PRIMARY KEY, nom TEXT);
+                CREATE TABLE Competences (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, nom TEXT);
+                CREATE TABLE SoftSkills (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, nom TEXT);
+                CREATE TABLE Education (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, diplome TEXT, ecole TEXT);
+                CREATE TABLE Experience (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, poste TEXT, entreprise TEXT, annee TEXT);
+                INSERT INTO Utilisateur VALUES (1, 'Itssghir');
+                INSERT INTO Competences VALUES (1, 1, 'Python'), (2, 1, 'Pandas'), (3, 1, 'Numpy'), (4, 1, 'Machine Learning'), (5, 1, 'IA'), (6, 1, 'Tableau'), (7, 1, 'Dataiku');
+                INSERT INTO SoftSkills VALUES (1, 1, 'Travail en équipe'), (2, 1, 'Curiosité'), (3, 1, 'Esprit critique');
+                INSERT INTO Education VALUES (1, 1, 'Master en Data Science', 'Université AI Paris');
+                INSERT INTO Experience VALUES (1, 1, 'Data Scientist', 'OpenAI France', '2024');`);
+
+        const res = db.exec("SELECT name FROM sqlite_master WHERE type='table';");
+        const tableNames = res[0].values.map(row => row[0]);
+        tableList.textContent = "📂 Tables disponibles : " + tableNames.join(", ");
+      });
+
+    function runSQL() {
+      const output = document.getElementById("sql-output");
+      const input = document.getElementById("sql-input").value;
+      try {
+        const results = db.exec(input);
+        if (results.length === 0) {
+          output.textContent = "✔️ Requête exécutée avec succès.";
+          return;
+        }
+        let html = "";
+        results.forEach(result => {
+          html += result.columns.join(" | ") + "\n";
+          result.values.forEach(row => {
+            html += row.join(" | ") + "\n";
+          });
+        });
+        output.textContent = html;
+      } catch (e) {
+        output.textContent = "❌ Erreur SQL : " + e.message;
+      }
+    }
+  </script>
 </body>
 </html>
