@@ -200,45 +200,147 @@
   </footer>
 
   <script>
+  <script>
+    // Variables globales
     let db;
     const tableList = document.getElementById("table-list");
+    let isQLearningRunning = false;
+    let agent = { x: 0, y: 0 };
+    let goal = { x: 4, y: 4 };
+    let qTable = {};
+    let snakeDots = [];
+    const maxSnakeDots = 10;
 
+    // Initialisation de SQL.js
     initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` })
       .then(SQL => {
         db = new SQL.Database();
-        db.run(`CREATE TABLE Utilisateur (id INTEGER PRIMARY KEY, nom TEXT);
-                CREATE TABLE Competences (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, nom TEXT);
+        // Création des tables et insertion des données initiales
+        db.run(`CREATE TABLE Utilisateur (id INTEGER PRIMARY KEY, nom TEXT, titre TEXT);
+                CREATE TABLE Competences (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, nom TEXT, niveau INTEGER);
                 CREATE TABLE SoftSkills (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, nom TEXT);
-                CREATE TABLE Education (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, diplome TEXT, ecole TEXT);
-                CREATE TABLE Experience (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, poste TEXT, entreprise TEXT, annee TEXT);
-                INSERT INTO Utilisateur VALUES (1, 'Itssghir');
-                INSERT INTO Competences VALUES (1, 1, 'Python'), (2, 1, 'Pandas'), (3, 1, 'Numpy'), (4, 1, 'Machine Learning'), (5, 1, 'IA'), (6, 1, 'Tableau'), (7, 1, 'Dataiku');
-                INSERT INTO SoftSkills VALUES (1, 1, 'Travail en équipe'), (2, 1, 'Curiosité'), (3, 1, 'Esprit critique');
-                INSERT INTO Education VALUES (1, 1, 'Master en Data Science', 'Université AI Paris');
-                INSERT INTO Experience VALUES (1, 1, 'Data Scientist', 'OpenAI France', '2024');`);
+                CREATE TABLE Education (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, diplome TEXT, ecole TEXT, annee TEXT);
+                CREATE TABLE Experience (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, poste TEXT, entreprise TEXT, annee TEXT, description TEXT);
+                CREATE TABLE Projets (id INTEGER PRIMARY KEY, utilisateur_id INTEGER, nom TEXT, description TEXT, technologies TEXT);
+                
+                INSERT INTO Utilisateur VALUES (1, 'Itssghir', 'Data Scientist Senior');
+                
+                INSERT INTO Competences VALUES 
+                (1, 1, 'Python', 5),
+                (2, 1, 'Pandas', 5),
+                (3, 1, 'Numpy', 4),
+                (4, 1, 'Machine Learning', 4),
+                (5, 1, 'IA', 4),
+                (6, 1, 'Tableau', 3),
+                (7, 1, 'Dataiku', 4),
+                (8, 1, 'SQL', 4),
+                (9, 1, 'R', 3),
+                (10, 1, 'TensorFlow', 3);
+                
+                INSERT INTO SoftSkills VALUES 
+                (1, 1, 'Travail en équipe'),
+                (2, 1, 'Curiosité'),
+                (3, 1, 'Esprit critique'),
+                (4, 1, 'Communication'),
+                (5, 1, 'Résolution de problèmes');
+                
+                INSERT INTO Education VALUES 
+                (1, 1, 'Master en Data Science', 'Université AI Paris', '2023'),
+                (2, 1, 'Licence en Informatique', 'Université Paris Saclay', '2021');
+                
+                INSERT INTO Experience VALUES 
+                (1, 1, 'Data Scientist Senior', 'OpenAI France', '2024-Présent', 'Développement de modèles prédictifs et analyse de données massives'),
+                (2, 1, 'Data Analyst', 'DataTech Solutions', '2022-2024', 'Création de tableaux de bord et analyse de données clients');
+                
+                INSERT INTO Projets VALUES
+                (1, 1, 'Prédiction de fraude', 'Système de détection de fraudes bancaires par apprentissage automatique', 'Python, TensorFlow, SQL'),
+                (2, 1, 'Dashboard COVID', 'Visualisation en temps réel des données de la pandémie', 'Tableau, R, API REST');`);
 
+        // Affichage des tables disponibles
         const res = db.exec("SELECT name FROM sqlite_master WHERE type='table';");
         const tableNames = res[0].values.map(row => row[0]);
-        tableList.textContent = "📂 Tables disponibles : " + tableNames.join(", ");
+        tableList.innerHTML = "<strong>📂 Tables disponibles :</strong><br>" + tableNames.join(", ");
+        
+        // Créer les hexagones pour chaque table
+        const hexContainer = document.getElementById("tables-hexagons");
+        hexContainer.innerHTML = ''; // Vider le conteneur avant d'ajouter de nouveaux éléments
+        
+        tableNames.forEach(tableName => {
+          const hex = document.createElement('div');
+          hex.className = 'table-hex';
+          hex.textContent = tableName;
+          hex.onclick = () => {
+            document.getElementById('sql-input').value = `SELECT * FROM ${tableName};`;
+          };
+          hexContainer.appendChild(hex);
+        });
+        
+        // Pré-remplir la zone de requête SQL avec un exemple
+        document.getElementById("sql-input").value = "SELECT u.nom, u.titre, e.poste, e.entreprise\nFROM Utilisateur u\nJOIN Experience e ON u.id = e.utilisateur_id\nWHERE e.entreprise = 'OpenAI France';";
+      })
+      .catch(err => {
+        tableList.textContent = "❌ Erreur lors du chargement de SQL.js: " + err.message;
       });
 
+    // Fonction pour exécuter des requêtes SQL
     function runSQL() {
       const output = document.getElementById("sql-output");
-      const input = document.getElementById("sql-input").value;
+      const input = document.getElementById("sql-input").value.trim();
+      
+      if (!input) {
+        output.textContent = "⚠️ Veuillez saisir une requête SQL.";
+        return;
+      }
+      
+      if (!db) {
+        output.textContent = "⚠️ Base de données non initialisée. Veuillez patienter...";
+        return;
+      }
+      
       try {
-        const results = db.exec(input);
-        if (results.length === 0) {
-          output.textContent = "✔️ Requête exécutée avec succès.";
-          return;
-        }
-        let html = "";
-        results.forEach(result => {
-          html += result.columns.join(" | ") + "\n";
-          result.values.forEach(row => {
-            html += row.join(" | ") + "\n";
-          });
-        });
-        output.textContent = html;
+        output.innerHTML = "<div class='loading'><div></div><div></div><div></div></div>";
+        
+        // Simuler un délai pour donner l'impression de traitement
+        setTimeout(() => {
+          try {
+            const results = db.exec(input);
+            
+            if (results.length === 0) {
+              // Vérifier si la requête a modifié des lignes
+              if (input.toLowerCase().includes("insert") || 
+                  input.toLowerCase().includes("update") || 
+                  input.toLowerCase().includes("delete")) {
+                output.textContent = "✅ Requête exécutée avec succès.";
+              } else {
+                output.textContent = "ℹ️ Aucun résultat retourné.";
+              }
+              return;
+            }
+            
+            let html = "<table style='width:100%; border-collapse: collapse;'>";
+            
+            // En-têtes de colonnes
+            html += "<tr style='border-bottom: 1px solid #adf;'>";
+            results[0].columns.forEach(column => {
+              html += `<th style='padding: 8px; text-align: left;'>${column}</th>`;
+            });
+            html += "</tr>";
+            
+            // Lignes de données
+            results[0].values.forEach(row => {
+              html += "<tr style='border-bottom: 1px solid rgba(173, 216, 255, 0.3);'>";
+              row.forEach(cell => {
+                html += `<td style='padding: 8px;'>${cell !== null ? cell : 'NULL'}</td>`;
+              });
+              html += "</tr>";
+            });
+            
+            html += "</table>";
+            output.innerHTML = html;
+          } catch (e) {
+            output.textContent = "❌ Erreur SQL : " + e.message;
+          }
+        }, 500);
       } catch (e) {
         output.textContent = "❌ Erreur SQL : " + e.message;
       }
