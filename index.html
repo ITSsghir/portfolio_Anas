@@ -32,6 +32,18 @@
       opacity: 0.8;
     }
 
+    #rotating-text {
+      font-size: 1.3em;
+      font-style: italic;
+      margin-top: 10px;
+      animation: fade 3s infinite alternate;
+    }
+
+    @keyframes fade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
     section {
       max-width: 900px;
       margin: auto;
@@ -123,23 +135,6 @@
       margin-top: 50px;
     }
 
-    #snake-follow {
-      position: fixed;
-      pointer-events: none;
-      top: 0;
-      left: 0;
-      z-index: 9999;
-    }
-
-    .snake-dot {
-      width: 12px;
-      height: 12px;
-      background: #00ffcc;
-      border-radius: 50%;
-      position: absolute;
-      box-shadow: 0 0 5px #00ffcc;
-    }
-
     #table-list {
       margin-bottom: 20px;
       padding: 15px;
@@ -171,11 +166,11 @@
 </head>
 <body>
   <div id="storm-effect"></div>
-  <div id="snake-follow"></div>
 
   <header>
     <h1>Itssghir</h1>
     <p>Data Scientist • Python Enthusiast • Q-Learning Explorer</p>
+    <div id="rotating-text"></div>
   </header>
 
   <section>
@@ -195,7 +190,7 @@
   </section>
 
   <footer>
-    <p>📧 Contact : itssghir@example.com | 💼 LinkedIn : <a href="https://www.linkedin.com/in/itssghir" style="color: #fff; text-decoration: underline;">linkedin.com/in/itssghir</a></p>
+    <p>📧 Contact : itssghir@example.com | 💼 LinkedIn : linkedin.com/in/itssghir</p>
     <p>&copy; 2025 Itssghir - Tous droits réservés</p>
   </footer>
 
@@ -243,6 +238,50 @@
         output.textContent = "❌ Erreur SQL : " + e.message;
       }
     }
+
+    // Grille et apprentissage Q-learning basique
+    const gridElement = document.getElementById("grid");
+    let agentPos = 0;
+    const goalPos = 24;
+
+    function drawGrid() {
+      gridElement.innerHTML = "";
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        if (i === agentPos) cell.innerHTML = '<div class="agent"></div>';
+        if (i === goalPos) cell.innerHTML = '<div class="goal"></div>';
+        gridElement.appendChild(cell);
+      }
+    }
+
+    async function startQLearning() {
+      document.getElementById("status").textContent = "⏳ L'agent s'entraîne...";
+      agentPos = 0;
+      drawGrid();
+      for (let step = 0; step < 20; step++) {
+        await new Promise(r => setTimeout(r, 300));
+        agentPos++;
+        drawGrid();
+      }
+      document.getElementById("status").textContent = "✅ Apprentissage terminé !";
+    }
+
+    drawGrid();
+
+    // Texte tournant dans le header
+    const phrases = [
+      "Bienvenue sur mon portfolio futuriste 🚀",
+      "Expert en Python et Machine Learning 🧠",
+      "Passionné par l'IA et la Data Science 📊",
+      "Créateur d'interfaces interactives 🎮"
+    ];
+    let index = 0;
+    const rotatingText = document.getElementById("rotating-text");
+    setInterval(() => {
+      rotatingText.textContent = phrases[index];
+      index = (index + 1) % phrases.length;
+    }, 4000);
   </script>
 </body>
 </html>
